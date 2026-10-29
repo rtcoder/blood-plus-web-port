@@ -1,19 +1,9 @@
+import {FrameStore} from './frame-store.js?v=stream-1';
 import {paletteTransfer,transferredTexture} from './drawn-palette.js';
 // Smooth generated art. Never changes animator or simulation state.
-export async function loadDrawnFrames(platform,manifest){
- const frames=new Map();
- const selected=new Map();
- for(const sequence of manifest.sequences)for(const frame of sequence.frames)selected.set(`${sequence.resourceId}:${frame.frame}`,{frame,paletteRGB:sequence.paletteRGB});
- const entries=[...selected];
- for(let start=0;start<entries.length;start+=32){
-  const loaded=await Promise.all(entries.slice(start,start+32).map(async([id,{frame,paletteRGB}])=>{
-   const [x0,y0,x1,y1]=frame.logicalBounds;
-   const image=await platform.loadImage(frame.url,x1-x0,y1-y0,4);
-   if(image.canvas.width!==(x1-x0)*4||image.canvas.height!==(y1-y0)*4)throw Error('Invalid 4x candidate '+frame.file);
-   return [id,{...frame,image,paletteRGB}];
-  }));
-  for(const [id,frame]of loaded)frames.set(id,frame);
- }
+export async function loadDrawnFrames(platform,manifest,{lazy=false}={}){
+ const frames=new FrameStore(platform,manifest,{lazy});
+ if(!lazy){frames.preloadAll();await platform.assets.wait();}
  return frames;
 }
 export function installDrawnRenderer(runtime,frames,baseImages,knownPaletteGroup=()=>false,enabled=()=>true){
@@ -21,6 +11,7 @@ export function installDrawnRenderer(runtime,frames,baseImages,knownPaletteGroup
  const original=runtime.classes.get('g').methods.get(key);
  const stats={newDraws:0,oldDraws:0,composedFromRemasteredRegions:0,emptyDraws:0,paletteFallbacks:0,paletteTransfers:0,missing:{},fallbackReasons:{},directRegions:{},lastDraw:null};
  const transfers=new Map(),textures=new Map();
+ if(frames.lazy)frames.onRelease=()=>{transfers.clear();textures.clear();};
  let composedDepth=0;
  const regionKey='a(Ljavax/microedition/lcdui/Graphics;III)V',originalRegion=runtime.classes.get('j')?.methods.get(regionKey);
  if(originalRegion)runtime.method('j',regionKey,(self,args)=>{
@@ -58,6 +49,7 @@ export function installDrawnRenderer(runtime,frames,baseImages,knownPaletteGroup
    composedDepth++;try{return original(self,args);}finally{composedDepth--;}
   }
   let image=entry.image;
+  if(!image){frames.requestFrame?.(self['g.a:I'],frame);return;}
   if(canTransfer&&!entry.paletteRGB.every((v,i)=>v===targetPalette[i])){
    const paletteKey=entry.paletteRGB.join(',')+'>'+targetPalette.join(','),textureKey=id+'>'+paletteKey;
    if(!transfers.has(paletteKey))transfers.set(paletteKey,paletteTransfer(entry.paletteRGB,targetPalette));

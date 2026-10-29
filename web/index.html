@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Blood+ — JavaScript remaster</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=stream-1">
 <body>
 <main>
   <header>
@@ -12,6 +12,10 @@
   </header>
   <section class="screen">
     <canvas width="1280" height="960" tabindex="0" aria-label="Blood+ — 320 by 240 game screen"></canvas>
+    <div id="loading" class="loading" role="status" aria-live="polite">
+      <span id="loading-text">Loading game resources…</span>
+      <progress id="loading-progress" aria-label="Graphics loading progress"></progress>
+    </div>
     <button id="resume" hidden>Resume</button>
   </section>
   <div class="softkeys">
@@ -27,6 +31,6 @@
     <p><button id="reset-save">Delete local save</button></p>
   </details>
 </main>
-<script type="module" src="src/main.js?v=shell-en-1"></script>
+<script type="module" src="src/main.js?v=stream-1"></script>
 </body>
 </html>

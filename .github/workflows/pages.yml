@@ -26,6 +26,9 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Verify streaming assets
+        run: node --test web/dev/asset-loading.test.mjs
+
       - name: Prepare production files
         shell: bash
         run: |

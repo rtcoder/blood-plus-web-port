@@ -50,11 +50,32 @@ Zapis w localStorage zachowuje źródłową progresję, odblokowane rozdziały, 
 
 ## Finalna grafika
 
-Jeden zestaw: `web/assets/remaster-v3/`, **3661 PNG** — 73 gotowe atlasy i 3588 unikalnych plików klatek. Manifest obejmuje 3604 źródłowe ID, w tym aliasy/puste klatki. Tła, efekty, HUD, fonty i animacje używają finalnych tekstur. Anchory, palety, składanie regionów i współrzędne logiczne pozostają źródłowe.
+Jeden zestaw: `web/assets/remaster-v3/`, **3661 bezstratnych WebP** — 73 gotowe atlasy i 3588 unikalnych plików klatek. Manifest obejmuje 3604 źródłowe ID, w tym aliasy/puste klatki. Tła, efekty, HUD, fonty i animacje używają finalnych tekstur. Anchory, palety, składanie regionów i współrzędne logiczne pozostają źródłowe.
 
 Przed usunięciem wejść porównano w Chrome wszystkie bajty RGBA 73 spakowanych atlasów z dotychczasowym finalnym rendererem: **zero różnic**. Zapisano wyłącznie wynik już wykonanego remasteru; porządkowanie nie było nową generacją AI.
 
 Pięć klatek nadal zawiera poprzedni remaster po odmowie narzędzia AI: `19456:113–116` i `25600:87`. To istniejące wyjątki, zachowane w finalnych atlasach.
+
+## Szybki start i ładowanie grafik
+
+Gra pobiera na start tylko metadane, zasoby interfejsu i intro. Grafiki poziomów są dogrywane, gdy otwiera je źródłowy loader. Zwykłe ruchy i ataki Sayi są przygotowywane przy wejściu do gry; dłuższe sekwencje fabularne/QTE przy rozpoczęciu konkretnej animacji. Nieużywane klatki poprzedniego poziomu są zwalniane; wspólne ruchy i interfejs pozostają w pamięci.
+
+- Obrazy PNG → WebP: **290,45 → 205,09 MB**, bezstratnie (`cwebp -lossless -exact`). Każdy z 3661 wyników porównano bajt po bajcie po dekodowaniu RGBA, także przezroczyste piksele. Rozmiary 4×, anchory, palety i odbicia nie zostały zmienione.
+- Indeks klatek: **8,54 MB → 657 KB**; zawiera tylko dane potrzebne do rysowania i przygotowania animacji.
+- Menu w Chrome na lokalnym serwerze: **5,53 MB zasobów, 13 klatek i 8 atlasów**, zamiast całej kampanii. To suma `encodedBodySize` zasobów strony, bez narzuconego ograniczenia łącza; nie deklaracja czasu startu na konkretnym połączeniu.
+- Pierwszy poziom: około **46,3 MB łącznie od startu**. Pozostała część grafiki dogrywa się w dalszej grze. Bezstratny WebP nie zmniejsza całej gry do kilku MB.
+
+Podczas dogrywania pojawia się pasek postępu, a symulacja czeka. Czas pobierania nie jest nadrabiany po wznowieniu. Błąd pobierania pokazuje **Retry loading**. Nie dodano usług zewnętrznych, backendu ani generowania AI podczas startu.
+
+Testy loadera i zgodności logiki uruchomisz bez npm:
+
+```sh
+node --test web/dev/asset-loading.test.mjs web/dev/campaign-streaming.test.mjs
+```
+
+Drugi test odtwarza 188619 kroków dwukrotnie i porównuje 9430 próbek stanu źródłowego, RNG oraz końcowy zapis z włączonymi i wyłączonymi hookami ładowania. Nie wymaga Javy ani skasowanego katalogu `reference/`. [Próba w przeglądarce](http://localhost:8080/dev/loading-review.html) sprawdza start, poziomy 0/4/6/9, zasoby bossów, zegar, pamięć, pauzę oraz błąd i ponowienie pobierania. Pomocniczy `?eager=1` pozwala starym synchronicznym fixture QA przygotować cały zestaw z góry; zwykła strona używa ładowania na żądanie.
+
+Obrazy są już przygotowane w repozytorium. Workflow Pages wyłącznie je kopiuje; nie wymaga konwertera. `web/dev/encode-webp.py` to zapis jednorazowej konwersji z PNG; Pillow i `cwebp` są potrzebne tylko do tej operacji. Skrótowe dowody: `web/dev/performance-results.json`; hashe wyników i pikseli: `web/assets/remaster-v3/encoding-proof.json`.
 
 ## Weryfikacja
 

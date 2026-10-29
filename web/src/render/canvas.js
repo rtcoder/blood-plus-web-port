@@ -22,7 +22,8 @@ export class CanvasGraphics {
  region(im,sx,sy,w,h,t,x,y,anchor){if(w<=0||h<=0)return;const swap=!!(t&4),dw=swap?h:w,dh=swap?w:h;if(anchor&8)x-=dw;else if(anchor&1)x-=dw>>1;if(anchor&32)y-=dh;else if(anchor&2)y-=dh>>1;
  const mats=[[1,0,0,1], [1,0,0,-1],[-1,0,0,1],[-1,0,0,-1],[0,1,1,0],[0,1,-1,0],[0,-1,1,0],[0,-1,-1,0]];
  const [a,b,c,d]=mats[t];const ox=(a<0?w:0)+(c<0?h:0),oy=(b<0?w:0)+(d<0?h:0);
- const texture=im.variant?.()??im;
+ const texture=im.variant?im.variant():im;
+ if(!texture)return; // Streaming barrier will repaint after the texture arrives.
  this.draw(ctx=>{ctx.translate(x+ox,y+oy);ctx.transform(a,b,c,d,0,0);ctx.drawImage(texture.canvas,sx*texture.scale,sy*texture.scale,w*texture.scale,h*texture.scale,0,0,w,h);});}
 }
 export function pngChunks(bytes){const out={};const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);for(let p=8;p+12<=bytes.length;){const n=v.getUint32(p);const type=String.fromCharCode(...bytes.slice(p+4,p+8));(out[type]??=[]).push(bytes.slice(p+8,p+8+n));p+=n+12;}return out;}

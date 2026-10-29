@@ -1,10 +1,12 @@
+import {installStreamingHooks} from '../src/render/frame-store.js?v=stream-1';
+import {invalidateGraphics} from '../src/render/invalidate.js';
 import {Runtime} from '../src/core/java-compat.js';
-import {BrowserPlatform} from '../src/core/platform.js';
+import {BrowserPlatform} from '../src/core/platform.js?v=stream-1';
 import {registerGame} from '../src/game/generated/index.js';
 import {RecordStorage} from '../src/storage/records.js?v=polish-1';
 import {Actions,keyCodes} from '../src/input/actions.js';
 import {stopAllAudio} from '../src/audio/midi.js';
-import {loadDrawnFrames,installDrawnRenderer} from '../src/render/drawn.js';
+import {loadDrawnFrames,installDrawnRenderer} from '../src/render/drawn.js?v=stream-1';
 
 export const domKeys={[-1]:'ArrowUp',[-2]:'ArrowDown',[-3]:'ArrowLeft',[-4]:'ArrowRight',[-5]:'KeyJ',[-6]:'KeyQ',[-7]:'KeyE',...Object.fromEntries(Array.from({length:10},(_,i)=>[48+i,'Digit'+i]))};
 
@@ -96,10 +98,10 @@ async function run(){
    platform.records=new RecordStorage({getItem:()=>localStorage.getItem(qaKey),setItem:(_,value)=>localStorage.setItem(qaKey,value)});
    report.storage='Isolated localStorage '+qaKey+'; initially empty, written only by source RMS';
   }else platform.records=new RecordStorage({getItem:()=>null,setItem:()=>{}});
-  await platform.load();
-  drawnFrames=await loadDrawnFrames(platform,JSON.parse(artText));canvas.style.imageRendering='auto';
+  await platform.load({lazyTextures:!params.has('eager')});
+  drawnFrames=await loadDrawnFrames(platform,JSON.parse(artText),{lazy:!params.has('eager')});canvas.style.imageRendering='auto';
   report.assetModel='built-in image_gen; model/seed not exposed';
-  runtime=new Runtime(platform);runtime.seed=0xB100Dn;registerGame(runtime);
+  runtime=new Runtime(platform);runtime.seed=0xB100Dn;registerGame(runtime);if(!params.has('eager'))installStreamingHooks(runtime,drawnFrames);
   if(drawnFrames)drawnStats=installDrawnRenderer(runtime,drawnFrames,new Set(platform.images.values()));
   const midlet=runtime.new('GameMIDletBLOOD');runtime.call('GameMIDletBLOOD','<init>()V',midlet,[],183);runtime.call('GameMIDletBLOOD','startApp()V',midlet,[]);
   game=platform.current;runtime.call('n','a(I)V',game,[0]);
@@ -137,7 +139,9 @@ async function run(){
   const draw=()=>{runtime.set(game,'s.o:Z',runtime.get(game,'s.p:Z'));runtime.set(game,'s.p:Z',0);platform.graphics.reset();runtime.call('s','paint(Ljavax/microedition/lcdui/Graphics;)V',game,[platform.graphics],183);};
   const step=async n=>{for(let i=0;i<n;i++){
    if(platform.stopped)throw Error(`Source application stopped before trace end at tick ${report.ticks}`);
-   runtime.clock+=20;runtime.set(game,'s.c:I',20);runtime.call('n','b()V',game,[]);actions.endTick();report.ticks++;draw();observe();
+   if(platform.assets.busy)await platform.assets.wait();
+   runtime.clock+=20;runtime.set(game,'s.c:I',20);runtime.call('n','b()V',game,[]);actions.endTick();report.ticks++;if(platform.assets.busy){await platform.assets.wait();invalidateGraphics(runtime,game);}draw();
+   while(platform.assets.busy){await platform.assets.wait();invalidateGraphics(runtime,game);draw();}observe();
    if(report.ticks%100===0){result.textContent=`Odtwarzanie ${report.ticks}/${report.plannedTicks} ticków…`;await yieldUI();}
   }};
   const capture=name=>{
