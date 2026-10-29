@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="pl"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><base href="/"><title>Blood+ — przebieg kampanii</title>
+<style>body{margin:24px;background:#19151b;color:#eee;font:14px system-ui}canvas{width:min(100%,640px);height:auto;image-rendering:pixelated;border:1px solid #756575}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:60vh;overflow:auto}a{color:#bfe0ff}#captures{display:flex;gap:16px;flex-wrap:wrap}figure{margin:0}figure img{width:320px;max-width:100%}.error{color:#ff8b8b}</style>
+<h1>Przebieg kampanii przez klawiaturę</h1>
+<p>Deterministyczny zegar 20 ms i seed 0xB100D. Wczytywany ślad: press, release, step, capture, detail. Tap zapisuje się jako press → step 1 → release → step 1. Zapis RMS jest odizolowany od zapisu użytkownika; domyślnie pozostaje w pamięci, a opcja storage=qa zapisuje go pod osobnym kluczem testowym.</p>
+<p id="result" role="status">Ładowanie…</p><p id="state"></p><canvas width="1280" height="960" aria-label="Przebieg gry"></canvas>
+<p><a id="download" download="campaign-browser-report.json">Pobierz raport JSON</a></p><div id="captures"></div><pre id="report"></pre>
+<script type="module" src="dev/campaign-review.js"></script></html>

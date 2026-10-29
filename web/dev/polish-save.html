@@ -1,0 +1,7 @@
+<!doctype html><meta charset="utf-8"><title>Blood+ — kontrola zapisu języka</title><h1>Kontrola lokalnego zapisu Blood+</h1><p>Tylko odczyt jednego klucza gry. Zapis nie jest zmieniany.</p><pre id="report">Sprawdzanie…</pre><script type="module">
+import {RecordStorage as Standard} from '../src/storage/records.js';
+import {RecordStorage as Fresh} from '../src/storage/records.js?polish=1';
+let raw,error;try{raw=JSON.parse(localStorage.getItem('blood-plus:rms:v1'));}catch(e){error=e.message;}
+const row=raw?.stores?.['1']?.[0];const a=new Standard(),b=new Fresh();
+document.querySelector('#report').textContent=JSON.stringify({schema:raw?.version,length:row?.length,sourceVersion:row?.[0],language:row?.[2],strength:row?.[3],stage:row?.[6],flags:row?.slice(7,18),standardWarning:a.warning,freshWarning:b.warning,error},null,2);
+</script>

@@ -1,0 +1,4 @@
+# Preserve the supplied originals and raw runtime resources byte for byte.
+original/** binary
+web/assets/data/** -text
+*.bin binary

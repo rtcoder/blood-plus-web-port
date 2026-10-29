@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blood+ — JavaScript remaster</title>
+<link rel="stylesheet" href="styles.css">
+<body>
+<main>
+  <header>
+    <h1>BLOOD<span>+</span></h1>
+    <div class="settings"><button id="pause">Pause</button></div>
+  </header>
+  <section class="screen">
+    <canvas width="1280" height="960" tabindex="0" aria-label="Blood+ — 320 by 240 game screen"></canvas>
+    <button id="resume" hidden>Resume</button>
+  </section>
+  <div class="softkeys">
+    <button data-key="KeyQ">Q · left softkey</button>
+    <button data-key="KeyE">E / Esc · right softkey</button>
+  </div>
+  <p id="status" role="status">Loading game resources…</p>
+  <p class="controls"><kbd>← ↑ ↓ →</kbd> / <kbd>WASD</kbd> move · <kbd>Space</kbd> up / jump · <kbd>J</kbd> / <kbd>Enter</kbd> action / confirm · <kbd>Left click</kbd> attack · <kbd>Right click</kbd> block (hold)</p>
+  <details>
+    <summary>Game information and controls</summary>
+    <p>Number keys 0–9 retain the original phone controls. The game menus and instructions explain the actions available in each situation. Click the bottom options, the center option or the menu arrows to select them. Use the mouse wheel to scroll screens with a scrollbar. Hold a direction to keep moving after jumping or attacking; you do not need to press it again. The game pauses when it loses focus; select Resume to continue.</p>
+    <p>The full campaign logic was compared with the supplied JAR. The v3 remaster includes redrawn characters, backgrounds, effects, HUD and fonts. The full campaign and all 975 animation sequences passed testing in Chrome; five frames retain the previous remaster following refusals by the AI tool. MIDI music plays through a local synthesizer with approximate instrument sounds.</p>
+    <p><button id="reset-save">Delete local save</button></p>
+  </details>
+</main>
+<script type="module" src="src/main.js?v=shell-en-1"></script>
+</body>
+</html>
