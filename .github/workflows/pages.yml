@@ -26,8 +26,45 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Verify streaming assets
-        run: node --test web/dev/asset-loading.test.mjs
+      - name: Verify production files
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync, readdirSync, statSync} from 'node:fs';
+          import {resolve, relative, dirname} from 'node:path';
+          import {createHash} from 'node:crypto';
+          import {spawnSync} from 'node:child_process';
+          import assert from 'node:assert/strict';
+          import {FrameStore} from './web/src/render/frame-store.js';
+          const root=resolve('web'), expected=new Set(), modules=new Set();
+          const file=path=>resolve(root,path.split('?')[0]);
+          const requireFile=path=>{const p=file(path);assert.ok(p.startsWith(root+'/')&&statSync(p).isFile(),path);expected.add(p);return p;};
+          const json=path=>JSON.parse(readFileSync(requireFile(path),'utf8'));
+          const verifyHash=(path,hash)=>{assert.match(hash,/^[a-f0-9]{64}$/);assert.equal(createHash('sha256').update(readFileSync(requireFile(path))).digest('hex'),hash,path);};
+          const walk=path=>readdirSync(path,{withFileTypes:true}).filter(e=>e.name!=='.DS_Store').flatMap(e=>e.isDirectory()?walk(resolve(path,e.name)):[resolve(path,e.name)]);
+          const visit=path=>{
+           const p=file(path);if(modules.has(p))return;modules.add(p);requireFile(path);
+           const check=spawnSync(process.execPath,['--check',p],{encoding:'utf8'});assert.equal(check.status,0,check.stderr);
+           for(const match of readFileSync(p,'utf8').matchAll(/(?:from\s*|import\s*)['"]([^'"]+)['"]/g)){
+            assert.ok(match[1].startsWith('.'),'Unexpected external module '+match[1]);
+            visit(relative(root,resolve(dirname(p),match[1].split('?')[0])));
+           }
+          };
+          requireFile('index.html');requireFile('styles.css');visit('src/main.js');
+          for(const p of walk(resolve(root,'src')))assert.ok(modules.has(p),'Unreferenced source '+p);
+          const base=json('assets/manifest.json'),art=json('assets/remaster-v3/manifest.json');
+          for(const image of base.images){
+           if(image.finalTexture)verifyHash(image.finalTexture,image.finalSha256);
+           if(image.paletteIndices){verifyHash(image.paletteIndices,image.paletteIndicesSha256);assert.equal(statSync(file(image.paletteIndices)).size,image.width*image.height);}
+          }
+          for(const page of art.pages)verifyHash(page.url,page.sha256);
+          const frames=new FrameStore({},art),usedPages=new Set([...frames.values()].filter(f=>f.texture).map(f=>f.texture.id));
+          for(const page of art.pages)assert.ok(usedPages.has(page.id),'Unreferenced animation page '+page.id);
+          json('assets/data/properties.json');
+          for(const name of [...Array.from({length:30},(_,i)=>'RP'+(i+1)),...Array.from({length:12},(_,i)=>'RP'+(i+41)),'RP54','RP55','brand0.png'])requireFile('assets/data/'+name);
+          for(const p of walk(resolve(root,'assets')))assert.ok(expected.has(p),'Unreferenced asset '+p);
+          console.log(`Verified ${modules.size} JavaScript modules, ${frames.size} frames and ${art.pages.length} animation pages; no unused asset files.`);
+          JS
 
       - name: Prepare production files
         shell: bash
@@ -35,6 +72,7 @@ jobs:
           set -euo pipefail
           mkdir -p _site
           cp -a web/index.html web/styles.css web/src web/assets _site/
+          find _site -name .DS_Store -type f -delete
           touch _site/.nojekyll
 
       - name: Upload site

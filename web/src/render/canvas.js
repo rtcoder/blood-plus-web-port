@@ -4,6 +4,7 @@ export const defaultFont={height:16,baseline:12,css:'16px sans-serif',$class:'ja
 export class CanvasGraphics {
  constructor(surface){this.surface=surface;this.ctx=surface.canvas.getContext('2d',{willReadFrequently:true});this.$class='javax/microedition/lcdui/Graphics';this.font=defaultFont;this.reset();}
  reset(){this.tx=0;this.ty=0;this.clip=[0,0,this.surface.width,this.surface.height];this.color=0;}
+ visible(x,y,w,h){const [cx,cy,cw,ch]=this.clip;return w>0&&h>0&&cw>0&&ch>0&&x+this.tx<Math.min(this.surface.width,cx+cw)&&y+this.ty<Math.min(this.surface.height,cy+ch)&&x+this.tx+w>Math.max(0,cx)&&y+this.ty+h>Math.max(0,cy);}
  draw(fn){const c=this.ctx,s=this.surface.scale;c.save();c.setTransform(s,0,0,s,0,0);c.imageSmoothingEnabled=false;c.beginPath();c.rect(...this.clip);c.clip();c.translate(this.tx,this.ty);c.fillStyle=c.strokeStyle='#'+(this.color&0xffffff).toString(16).padStart(6,'0');fn(c);c.restore();}
  call(name,a){if(name==='getColor')return this.color;if(name==='setColor'){this.color=a[0];return;}if(name==='getFont')return this.font;if(name==='setFont'){this.font=a[0];return;}if(name==='translate'){this.tx+=a[0];this.ty+=a[1];return;}if(name==='setClip'){this.clip=[a[0]+this.tx,a[1]+this.ty,Math.max(0,a[2]),Math.max(0,a[3])];return;}if(name==='getClipX')return this.clip[0]-this.tx;if(name==='getClipY')return this.clip[1]-this.ty;if(name==='getClipWidth')return this.clip[2];if(name==='getClipHeight')return this.clip[3];
  if(name==='fillRect')return this.draw(c=>c.fillRect(...a));
@@ -20,6 +21,7 @@ export class CanvasGraphics {
  if(name==='drawChars'){const [ch,off,len,x,y,anchor]=a;const txt=String.fromCharCode(...ch.slice(off,off+len));return this.draw(c=>{c.font=this.font.css;c.textBaseline=anchor&64?'alphabetic':'top';c.textAlign=anchor&8?'right':anchor&1?'center':'left';c.fillText(txt,x,y);});}
  throw Error('Unsupported Graphics.'+name);}
  region(im,sx,sy,w,h,t,x,y,anchor){if(w<=0||h<=0)return;const swap=!!(t&4),dw=swap?h:w,dh=swap?w:h;if(anchor&8)x-=dw;else if(anchor&1)x-=dw>>1;if(anchor&32)y-=dh;else if(anchor&2)y-=dh>>1;
+ if(!this.visible(x,y,dw,dh))return;
  const mats=[[1,0,0,1], [1,0,0,-1],[-1,0,0,1],[-1,0,0,-1],[0,1,1,0],[0,1,-1,0],[0,-1,1,0],[0,-1,-1,0]];
  const [a,b,c,d]=mats[t];const ox=(a<0?w:0)+(c<0?h:0),oy=(b<0?w:0)+(d<0?h:0);
  const texture=im.variant?im.variant():im;

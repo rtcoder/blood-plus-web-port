@@ -36,3 +36,11 @@ export function transferredTexture(texture,transfer){
  source.data.set(transfer(source.data));canvas.getContext('2d').putImageData(source,0,0);
  return {...texture,canvas};
 }
+
+// Recolor only the requested visible crop, never a shared atlas sheet.
+export function transferredRegionTexture(texture,[x,y,width,height],transfer){
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext('2d');ctx.drawImage(texture.canvas,x,y,width,height,0,0,width,height);
+ const pixels=ctx.getImageData(0,0,width,height);pixels.data.set(transfer(pixels.data));ctx.putImageData(pixels,0,0);
+ return {...texture,canvas,width:width/texture.scale,height:height/texture.scale};
+}

@@ -1,10 +1,4 @@
 .DS_Store
 __pycache__/
 *.pyc
-work/
-freej2me_system/
-rms/
-config/
-
-.venv/
 _site/
